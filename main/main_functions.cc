@@ -47,7 +47,7 @@ namespace
   // signed value.
 
 #ifdef CONFIG_IDF_TARGET_ESP32S3
-  constexpr int scratchBufSize = 200 * 1024;
+  constexpr int scratchBufSize = 40 * 1024;
 #else
   constexpr int scratchBufSize = 0;
 #endif
@@ -87,7 +87,7 @@ void setup()
   //
   // tflite::AllOpsResolver resolver;
   // NOLINTNEXTLINE(runtime-global-variables)
-  static tflite::MicroMutableOpResolver<12> micro_op_resolver;
+  static tflite::MicroMutableOpResolver<16> micro_op_resolver;
 
   // Include only the necessary operations
   micro_op_resolver.AddConv2D();         // Conv2D layer
@@ -96,7 +96,9 @@ void setup()
   micro_op_resolver.AddSoftmax();        // Softmax activation
   micro_op_resolver.AddQuantize();       // Quantize operation (if using quantized model)
   micro_op_resolver.AddDequantize();     // Dequantize operation (if using quantized model)
-
+  micro_op_resolver.AddDepthwiseConv2D(); // DepthwiseConv2D layer
+  micro_op_resolver.AddReshape();         // Reshape layer
+  micro_op_resolver.AddAveragePool2D();  // AveragePooling2D layer
   // Add operations for BatchNormalization layers
   micro_op_resolver.AddMul();   // Used in BatchNormalization
   micro_op_resolver.AddAdd();   // Used in BatchNormalization
@@ -153,7 +155,9 @@ void loop()
 
   // Process the inference results.
   // TODO 1: Update the code to handle the 3 classes: cup, laptop, unknown -----
-
+  int8_t unknown_score = output->data.uint8[kUnknownIndex];;
+  float unknown_score_f =
+      (unknown_score - output->params.zero_point) * output->params.scale;
   // END TODO 1 ----------------------------------------------------------------
 
   // Respond to detection
@@ -161,62 +165,3 @@ void loop()
   vTaskDelay(1); // to avoid watchdog trigger
 }
 #endif
-
-#if defined(COLLECT_CPU_STATS)
-long long total_time = 0;
-long long start_time = 0;
-extern long long softmax_total_time;
-extern long long dc_total_time;
-extern long long conv_total_time;
-extern long long fc_total_time;
-extern long long pooling_total_time;
-extern long long add_total_time;
-extern long long mul_total_time;
-#endif
-
-void run_inference(void *ptr)
-{
-  /* Convert from uint8 picture data to int8 */
-  for (int i = 0; i < kNumCols * kNumRows; i++)
-  {
-    input->data.int8[i] = ((uint8_t *)ptr)[i] ^ 0x80;
-  }
-
-#if defined(COLLECT_CPU_STATS)
-  long long start_time = esp_timer_get_time();
-#endif
-  // Run the model on this input and make sure it succeeds.
-  if (kTfLiteOk != interpreter->Invoke())
-  {
-    MicroPrintf("Invoke failed.");
-  }
-
-#if defined(COLLECT_CPU_STATS)
-  long long total_time = (esp_timer_get_time() - start_time);
-  printf("Total time = %lld\n", total_time / 1000);
-  // printf("Softmax time = %lld\n", softmax_total_time / 1000);
-  printf("FC time = %lld\n", fc_total_time / 1000);
-  printf("DC time = %lld\n", dc_total_time / 1000);
-  printf("conv time = %lld\n", conv_total_time / 1000);
-  printf("Pooling time = %lld\n", pooling_total_time / 1000);
-  printf("add time = %lld\n", add_total_time / 1000);
-  printf("mul time = %lld\n", mul_total_time / 1000);
-
-  /* Reset times */
-  total_time = 0;
-  // softmax_total_time = 0;
-  dc_total_time = 0;
-  conv_total_time = 0;
-  fc_total_time = 0;
-  pooling_total_time = 0;
-  add_total_time = 0;
-  mul_total_time = 0;
-#endif
-
-  TfLiteTensor *output = interpreter->output(0);
-
-  // Process the inference results.
-  // TODO 2: Update the code to handle the 3 classes: cup, laptop, unknown -----
-
-  // END TODO 2 ----------------------------------------------------------------
-}
