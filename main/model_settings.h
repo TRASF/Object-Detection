@@ -27,11 +27,8 @@ constexpr int kNumChannels = 1;
 
 constexpr int kMaxImageSize = kNumCols * kNumRows * kNumChannels;
 
-constexpr int kCategoryCount = 3;
-constexpr int kCupIndex = 0;           // Index for cup category
-constexpr int kLaptopIndex = 1;        // Index for laptop category
-constexpr int kUnknownIndex = 2;       // Index for unknown category
+// TODO: Edit the category and make the corresponding index
 
-extern const char* kCategoryLabels[kCategoryCount]; // Category labels array
+// END TODO ----------------------------------------------------------------
 
 #endif  // TENSORFLOW_LITE_MICRO_EXAMPLES_PERSON_DETECTION_MODEL_SETTINGS_H_
