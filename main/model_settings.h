@@ -28,6 +28,10 @@ constexpr int kNumChannels = 1;
 constexpr int kMaxImageSize = kNumCols * kNumRows * kNumChannels;
 
 // TODO: Edit the category and make the corresponding index
+#define kCategoryCount 3
+#define kCupIndex 0
+#define kLaptopIndex 1
+#define kUnknownIndex 2
 
 // END TODO ----------------------------------------------------------------
 

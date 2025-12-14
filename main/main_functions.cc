@@ -32,6 +32,29 @@ limitations under the License.
 #include <esp_log.h>
 #include "esp_main.h"
 
+namespace {
+float GetScoreFloat(const TfLiteTensor* tensor, int index) {
+  if (tensor == nullptr) {
+    return 0.0f;
+  }
+
+  switch (tensor->type) {
+    case kTfLiteFloat32:
+      return tensor->data.f[index];
+    case kTfLiteInt8: {
+      const int32_t q = tensor->data.int8[index];
+      return (q - tensor->params.zero_point) * tensor->params.scale;
+    }
+    case kTfLiteUInt8: {
+      const int32_t q = tensor->data.uint8[index];
+      return (q - tensor->params.zero_point) * tensor->params.scale;
+    }
+    default:
+      return 0.0f;
+  }
+}
+}  // namespace
+
 // Globals, used for compatibility with Arduino-style sketches.
 namespace
 {

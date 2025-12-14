@@ -25,6 +25,7 @@ limitations under the License.
 #include "image_provider.h"
 #include "bsp/esp32_s3_eye.h"
 #include "esp_heap_caps.h"
+#include <cstring>
 
 // Camera definition is always initialized to match the trained detection model: 96x96 pix
 // That is too small for LCD displays, so we extrapolate the image to 192x192 pix
@@ -128,7 +129,7 @@ void RespondToDetection(float cup_score, float laptop_score, float unknown_score
 
     // Directly update the canvas buffer if it's allocated
     if (canvas_buf != NULL) {
-        memcpy(canvas_buf, buf, IMG_WD * IMG_HT * sizeof(uint16_t));
+        std::memcpy(canvas_buf, buf, IMG_WD * IMG_HT * sizeof(uint16_t));
         lv_obj_invalidate(camera_canvas);  // Invalidate the canvas to refresh
     } else {
         printf("Canvas buffer is NULL\n");
